@@ -9,6 +9,7 @@ RUN apk update && apk add --no-cache nginx \
 RUN mkdir -p /run/nginx
 
 # Nginx konfigürasyon dosyasını kopyala
+COPY ./conf/wordpress.conf /etc/nginx/conf.d/wordpress.conf
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 
 # Nginx'i başlatmak için komut
