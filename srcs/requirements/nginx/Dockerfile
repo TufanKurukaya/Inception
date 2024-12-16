@@ -1,16 +1,17 @@
-# Alpine Linux'un son sürümünü base image olarak kullan
-FROM alpine:latest
+FROM alpine:3.20.3
 
-# Gerekli paketleri ve Nginx'i yükle
-RUN apk update && apk add --no-cache nginx \
-    && rm -rf /var/cache/apk/*
+RUN apk update && apk add --no-cache nginx openssl bash
 
-# Nginx için gerekli dizinleri oluştur
-RUN mkdir -p /run/nginx
+RUN mkdir -p /etc/nginx/ssl /var/www/html
 
-# Nginx konfigürasyon dosyasını kopyala
-COPY ./conf/wordpress.conf /etc/nginx/conf.d/wordpress.conf
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf
+COPY ./tools/generate_ssl.sh /etc/nginx/ssl/generate_ssl.sh
 
-# Nginx'i başlatmak için komut
+RUN chmod +x /etc/nginx/ssl/generate_ssl.sh
+
+EXPOSE 443
+
+ENTRYPOINT [ "etc/nginx/ssl/generate_ssl.sh" ]
+
 CMD ["nginx", "-g", "daemon off;"]
+

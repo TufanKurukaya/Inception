@@ -26,4 +26,26 @@ fclean: clean
 
 re: fclean all
 
+logs:
+	docker compose -f $(COMPOSE_DIR)/docker-compose.yml logs -f
+
+f: fclean
+	docker builder prune -a --force
+	docker system prune -a --volumes --force
+	docker volume prune --all --force
+
+c:
+	docker rm -f $$(docker ps -a -q)
+	docker image rm -f $$(docker image ls -a -q)
+	docker volume prune --all --force
+
+nginx:
+	docker compose -f srcs/docker-compose.yml up --build nginx
+
+maria:
+	docker compose -f srcs/docker-compose.yml up --build mariadb
+
+wordpress:
+	docker compose -f srcs/docker-compose.yml up --build wordpress
+
 .PHONY: all up down restart build clean fclean re
