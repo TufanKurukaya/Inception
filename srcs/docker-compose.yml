@@ -1,10 +1,11 @@
 services:
   mariadb:
-    build:
-      context: ./requirements/mariadb
+    # build:
+    #   context: ./requirements/mariadb
+    image: mariadb
     container_name: mariadb
     volumes:
-      - /home/${USER}/data/mariadb:/var/lib/mysql
+      - ${HOME}/data/mariadb:/var/lib/mysql
     networks:
       - webnet
     env_file:
@@ -16,7 +17,7 @@ services:
     depends_on:
       - mariadb
     volumes:
-      - /home/${USER}/data/wordpress:/var/www/html
+      - ${HOME}/data/wordpress:/var/www/html
     networks:
       - webnet
     env_file:
@@ -28,7 +29,7 @@ services:
       - "443:443"
     container_name: nginx
     volumes:
-      - /home/${USER}/data/wordpress:/var/www/html
+      - ${HOME}/data/wordpress:/var/www/html
     networks:
       - webnet
     env_file:
@@ -39,7 +40,3 @@ services:
 networks:
   webnet:
     driver: bridge
-
-volumes:
-  mariadb:
-  wordpress:

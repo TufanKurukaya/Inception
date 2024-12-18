@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     less \
     mariadb-client \
+    sendmail \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,10 +20,13 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     mv wp-cli.phar /usr/local/bin/wp
 
 COPY ./tools/entrypoint.sh /var/entrypoint.sh
+COPY ./conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
 WORKDIR /var/www/html
 
 RUN chmod +x /var/entrypoint.sh
+
+EXPOSE 9000
 
 ENTRYPOINT [ "/var/entrypoint.sh" ]
 
