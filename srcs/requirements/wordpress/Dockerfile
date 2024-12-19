@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     unzip \
     less \
     mariadb-client \
-    sendmail \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

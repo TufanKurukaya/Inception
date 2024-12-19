@@ -1,8 +1,7 @@
 services:
   mariadb:
-    # build:
-    #   context: ./requirements/mariadb
-    image: mariadb
+    build:
+      context: ./requirements/mariadb
     container_name: mariadb
     volumes:
       - ${HOME}/data/mariadb:/var/lib/mysql
