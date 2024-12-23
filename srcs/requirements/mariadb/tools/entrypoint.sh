@@ -1,60 +1,46 @@
-#!/bin/sh
 
-set -e
+if [ ! -d "/run/mysqld" ]; then
+	mkdir -p /run/mysqld
+	chown -R mysql:mysql /run/mysqld
+fi
 
-echo "Initializing MariaDB data directory if necessary..."
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "Initializing MariaDB data directory..."
-    mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+
+	chown -R mysql:mysql /var/lib/mysql
+
+	# init database
+	mysql_install_db --basedir=/usr --datadir=/var/lib/mysql --user=mysql --rpm > /dev/null
+
+	tfile=`mktemp`
+	if [ ! -f "$tfile" ]; then
+		return 1
+	fi
+
+	# https://stackoverflow.com/questions/10299148/mysql-error-1045-28000-access-denied-for-user-billlocalhost-using-passw
+	cat << EOF > $tfile
+USE mysql;
+FLUSH PRIVILEGES;
+
+DELETE FROM	mysql.user WHERE User='';
+DROP DATABASE test;
+DELETE FROM mysql.db WHERE Db='test';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
+
+CREATE DATABASE $MYSQL_DATABASE CHARACTER SET utf8 COLLATE utf8_general_ci;
+CREATE USER '$MYSQL_USER'@'%' IDENTIFIED by '$MYSQL_PASSWORD';
+GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
+
+FLUSH PRIVILEGES;
+EOF
+	# run init.sql
+	/usr/bin/mysqld --user=mysql --bootstrap < $tfile
+	rm -f $tfile
 fi
 
-echo "Starting MariaDB server for setup..."
-mysqld_safe --user=mysql &
-pid="$!"
+# allow remote connections
+sed -i "s|skip-networking|# skip-networking|g" /etc/my.cnf.d/mariadb-server.cnf
+sed -i "s|.*bind-address\s*=.*|bind-address=0.0.0.0|g" /etc/my.cnf.d/mariadb-server.cnf
 
-# Wait until MariaDB is ready to accept connections
-echo "Waiting for MariaDB to start..."
-while ! mysqladmin ping -h "localhost" --silent; do
-    sleep 1
-done
-
-echo "MariaDB started. Setting up database and user..."
-
-# Read secrets
-DB_USER=$MYSQL_USER
-DB_PASS=$MYSQL_PASSWORD
-
-# Ensure environment variables are set
-if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
-    echo "MYSQL_ROOT_PASSWORD is not set. Exiting."
-    exit 1
-fi
-
-# Create database
-if [ -n "$MYSQL_DATABASE" ]; then
-    echo "Creating database: $MYSQL_DATABASE"
-    mysql -e "CREATE DATABASE IF NOT EXISTS \`$MYSQL_DATABASE\`;"
-fi
-
-# Create user and grant privileges for '%'
-if [ -n "$DB_USER" ] && [ -n "$DB_PASS" ]; then
-    echo "Creating user: $DB_USER@'%'"
-    mysql -e "CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASS';"
-    echo "Granting privileges to user: $DB_USER@'%' on database: $MYSQL_DATABASE"
-    mysql -e "GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE:-}\`.* TO '$DB_USER'@'%';"
-    mysql -e "FLUSH PRIVILEGES;"
-fi
-
-# Optionally, create user for 'localhost'
-echo "Creating user: $DB_USER@'localhost'"
-mysql -e "CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';"
-mysql -e "GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE:-}\`.* TO '$DB_USER'@'localhost';"
-mysql -e "FLUSH PRIVILEGES;"
-
-echo "Shutting down MariaDB server after setup..."
-mysqladmin shutdown
-
-echo "MariaDB setup complete."
-
-# Start MariaDB in the foreground
-exec "$@"
+exec /usr/bin/mysqld --user=mysql --console

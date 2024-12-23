@@ -45,6 +45,7 @@ f:
 	docker builder prune -a --force
 	docker system prune -a --volumes --force
 	docker volume prune --all --force
+	docker volume rm -f $$(docker volume ls -qf dangling=true)
 
 nginx:
 	mkdir -p ${HOME}/data/wordpress
