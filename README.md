@@ -127,7 +127,7 @@ Bu proje, Docker kullanarak NGINX, MariaDB ve PHP-FPM ile eksiksiz bir WordPress
 
 3. `secrets` dizinini oluşturun ve gerekli dosyaları doldurun:
    ```bash
-   mkdir secrets
+   mkdir -p secrets
    echo "root_sifreniz" > secrets/db_root_password.txt
    echo "veritabani_sifreniz" > secrets/db_password.txt
    cat <<EOF > secrets/credentials.txt
