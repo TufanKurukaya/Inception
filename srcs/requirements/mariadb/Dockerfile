@@ -6,6 +6,10 @@ RUN	apk update && apk upgrade && apk add --no-cache \
 
 COPY tools/entrypoint.sh /tmp/entrypoint.sh
 
+RUN chmod +x /tmp/entrypoint.sh
+
 EXPOSE 3306
 
-ENTRYPOINT ["sh", "/tmp/entrypoint.sh"]
+ENTRYPOINT ["/tmp/entrypoint.sh"]
+
+CMD ["/usr/bin/mysqld", "--user=mysql"]

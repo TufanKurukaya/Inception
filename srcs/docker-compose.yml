@@ -7,20 +7,30 @@ services:
       - volume_db:/var/lib/mysql
     networks:
       - webnet
-    env_file:
-      - .env
+    secrets:
+      - db_root_password
+      - db_password
+      - credentials
+    restart: always
+
   wordpress:
     build:
       context: ./requirements/wordpress
     container_name: wordpress
-    depends_on:
-      - mariadb
     volumes:
       - volume_wp:/var/www/html
     networks:
       - webnet
+    secrets:
+      - db_root_password
+      - db_password
+      - credentials
     env_file:
       - .env
+    restart: always
+    depends_on:
+      - mariadb
+
   nginx:
     build:
       context: ./requirements/nginx
@@ -31,8 +41,11 @@ services:
       - volume_wp:/var/www/html
     networks:
       - webnet
+    secrets:
+      - credentials
     env_file:
       - .env
+    restart: always
     depends_on:
       - mariadb
       - wordpress
@@ -57,3 +70,12 @@ volumes:
       type: none
       device: ${HOME}/data/mariadb
       o: bind
+
+
+secrets:
+  credentials:
+    file: ../secrets/credentials.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  db_password:
+    file: ../secrets/db_password.txt
